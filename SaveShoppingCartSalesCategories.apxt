@@ -1,0 +1,60 @@
+trigger SaveShoppingCartSalesCategories on ShoppingCartSalesCategory__c (before insert, before update, after insert, after update, after delete) {
+
+    if (Trigger.isBefore) {
+        
+        if (Trigger.isInsert) {
+            
+            ShoppingCartSalesCategoriesController.validateShoppingCartSalesCategory(Trigger.new);
+        }
+        
+        if (Trigger.isUpdate) {
+            
+            ShoppingCartSalesCategoriesController.validateShoppingCartSalesCategory(Trigger.new);
+        }
+    }
+
+    if (Trigger.isAfter) {
+        
+        if (Trigger.isInsert) {
+            
+            List<String> categoryName = new List<String>();
+            List<String> categoryId = new List<String>();
+            
+            for (ShoppingCartSalesCategory__c eachShoppingCartSalesCategory: Trigger.new) {
+                
+                categoryName.add(eachShoppingCartSalesCategory.Name);
+                categoryId.add(eachShoppingCartSalesCategory.Id);
+            }
+            
+            ShoppingCartSalesCategoriesController.addSalesCategoriesToOtherServer(categoryName, categoryId);
+        }
+        
+        if (Trigger.isUpdate) {
+            
+            List<String> categoryName = new List<String>();
+            List<String> categoryId = new List<String>();
+            
+            for (ShoppingCartSalesCategory__c eachShoppingCartSalesCategory: Trigger.new) {
+                
+                categoryName.add(eachShoppingCartSalesCategory.Name);
+                categoryId.add(eachShoppingCartSalesCategory.Id);
+            }
+            
+            ShoppingCartSalesCategoriesController.changeSalesCategoriesOnOtherServer(categoryName, categoryId);
+        }
+        
+        if (Trigger.isDelete) {
+            
+            List<String> categoryName = new List<String>();
+            List<String> categoryId = new List<String>();
+            
+            for (ShoppingCartSalesCategory__c eachShoppingCartSalesCategory: Trigger.old) {
+                
+                categoryName.add(eachShoppingCartSalesCategory.Name);
+                categoryId.add(eachShoppingCartSalesCategory.Id);
+            }
+            
+            ShoppingCartSalesCategoriesController.deleteSalesCategoriesFromOtherServer(categoryName, categoryId);
+        }
+    }  
+}
