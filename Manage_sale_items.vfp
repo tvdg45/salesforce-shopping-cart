@@ -1,0 +1,1533 @@
+<apex:page docType="html-5.0">
+<script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery-3.2.1.js"></script>
+<script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery.min.js"></script>
+<script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery.backstretch.js"></script>
+<style type="text/css">
+    .form-group { width: 100%; text-align: left; }
+    .form-control { width: 100%; min-width: 100%; max-width: 100%; }
+    #item_description { height: 200px; min-height: 200px; max-height: 200px; }
+    .for_sale_image { max-width: 100%; max-height: 100%; }
+    .submit_button:hover, .find:hover, .remove_additional_photo:hover,
+    #item_thumbnail:hover, #item_additional_thumbnail:hover, .remove_for_sale_item:hover { cursor: pointer; }
+    input[type="text"], select, input[type="file"], textarea { background: white; border: 2px solid; border-color: #5A403B; }
+    input[type="button"], input[type="submit"] { background: #5A403B; color: white; padding: 4px 3px; font-weight: bold; border: 2px solid; border-color: #5A403B; border-radius: 3px; }
+    input[type="button"]:hover, input[type="button"]:focus, input[type="submit"]:hover, input[type="submit"]:focus { background: #512600; color: white; padding: 4px 3px; font-weight: bold; border: 2px solid; border-color: #512600; border-radius: 3px; cursor: pointer; }
+    input[type="button"]:disabled, input[type="submit"]:disabled { cursor: not-allowed; padding: 4px 3px; font-weight: bold; border-radius: 3px; }
+    a { color: #512600; text-decoration: none; }
+    a:visited { color: #512600; text-decoration: none; }
+    a:hover, a:focus { cursor: pointer; color: #5A403B; text-decoration: underline; }
+    label:hover { cursor: text; }
+    
+    @media only screen and (min-width: 2001px) {
+        
+        .for_sale_items { text-align: left; margin-left: 1%; margin-right: 1%; width: 48%; }
+    }
+    
+    @media only screen and (min-width: 1001px) and (max-width: 2000px) {
+        
+        .for_sale_items { text-align: left; margin-left: 1%; margin-right: 1%; width: 48%; }
+    }
+    
+    @media only screen and (min-width: 501px) and (max-width: 1000px) {
+        
+        .for_sale_items { text-align: left; margin-left: 1%; margin-right: 1%; width: 96%; }
+    }
+    
+    @media only screen and (max-width: 500px) {
+        
+        .for_sale_items { text-align: left; margin-left: 1%; margin-right: 1%; width: 96%; }
+    }
+</style>
+<div class="for_sale_items" style="text-align: left; margin-left: 1%; margin-right: 1%;"></div>
+<script type="text/javascript">
+    var show_additional_pictures = new Array();
+    var additional_picture_id = new Array();
+    var additional_picture_position = 0;
+    var product_details;
+    var domain = "https://www.timothysdigitalsolutions.com/store";
+    var crm_domain = "https://tdscloud-dev-ed--c.visualforce.com/apex/Manage_sale_items";
+    var third_party_domain = "https://shopping-cart-java.herokuapp.com";
+    var forward_slash_or_html_extension = "/";
+    
+    $.url_params = function(name) {
+    
+        var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    
+        if (results == null){
+        
+            return null;
+        } else {
+        
+            return decodeURI(results[1]) || 0;
+        }
+    }
+    
+    function item_not_found_message() {
+        
+        return "<p>Sorry, that item was not found.  Try <a href=\"" + crm_domain + "\">searching</a> for it.</p>";
+    }
+    
+    //Sort by page options
+    function sort_by() {
+        
+        var output = "";
+        
+        output += "<option value=\"Low to high\">Price low to high</option>";
+        output += "<option value=\"High to low\">Price high to low</option>";
+        
+        return output;
+    }
+    
+    //Results per page options
+    function results_per_page() {
+        
+        var output = "";
+        
+        output += "<option value=\"10\">10 results per page</option>";
+        output += "<option value=\"20\">20 results per page</option>";
+        output += "<option value=\"30\">30 results per page</option>";
+        output += "<option value=\"40\">40 results per page</option>";
+        output += "<option value=\"50\">50 results per page</option>";
+        
+        return output;
+    }
+
+    function show_add_for_sale_item_form() {
+        
+        var html_code = "";
+        
+        html_code += "<br /><a href=\"" + crm_domain + "\"><< Back</a><br /><br />";
+        html_code += "<form id=\"add_for_sale_item\" enctype=\"multipart/form-data\">";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<label for=\"item_name\">Item:</label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_name\" name=\"item_name\" placeholder=\"What is your item?\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_category\">Category:</label>";
+        html_code += "<select class=\"form-control\" id=\"item_category\" name=\"item_category\">";
+        html_code += "<option value=\" \">Choose</option>";
+        html_code += "</select>";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_description\">Description:</label>";
+        html_code += "<textarea class=\"form-control\" id=\"item_description\" name=\"item_description\" placeholder=\"Explain more about your item.\"></textarea>";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_price\">Price (using numbers and decimal points only):</label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_price\" name=\"item_price\" placeholder=\"3.99\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_inventory\">Inventory (using numbers only):</label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_inventory\" name=\"item_inventory\" placeholder=\"40\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_thumbnail\">Item image:</label>";
+        html_code += "<input type=\"file\" class=\"form-control\" id=\"item_thumbnail\" name=\"item_thumbnail\" />";
+        html_code += "<input type=\"hidden\" name=\"add_item\" value=\"Add item\"/>";
+        html_code += "</div>";
+        html_code += "<br />";
+        html_code += "<input type=\"submit\" name=\"submit\" class=\"btn btn-success submit_button\" value=\"Add item\"/>";
+        html_code += "</form>";
+        html_code += "<div class=\"add_for_sale_item_feedback\"></div>";
+        html_code += "<br /><a href=\"" + crm_domain + "\"><< Back</a><br /><br />";
+        
+        $(".for_sale_items").html(html_code);
+    }
+    
+    function show_change_for_sale_item_form() {
+        
+        var html_code = "";
+        
+        html_code += "<br /><a href=\"" + crm_domain + "\"><< Back</a><br /><br />";
+        html_code += "<div style=\"text-align: left; width: 100%\">";
+        html_code += "<div style=\"width: 100%; text-align: left\" class=\"for_sale_item_photos\"></div>";
+        html_code += "<div style=\"text-align: left; width: 100%\">";
+        html_code += "<form id=\"add_additional_photo\" enctype=\"multipart/form-data\">";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_additional_thumbnail\">Item additional image:</label>";
+        html_code += "<input type=\"file\" class=\"form-control\" id=\"item_additional_thumbnail\" name=\"item_additional_thumbnail\" />";
+        html_code += "<input type=\"hidden\" class=\"product\" name=\"product\" />";
+        html_code += "<input type=\"hidden\" name=\"add_picture\" value=\"Add picture\" />";
+        html_code += "</div>";
+        html_code += "<br />";
+        html_code += "<input type=\"submit\" name=\"submit\" class=\"btn btn-success submit_button\" value=\"Add picture\"/>";
+        html_code += "</form>";
+        html_code += "<div class=\"add_additional_photo_feedback\"></div>";
+        html_code += "<div class=\"delete_additional_photo_feedback\"></div>";
+        html_code += "</div><br />";
+        html_code += "<div style=\"width: 100%; text-align: left\">";
+        html_code += "<form id=\"change_for_sale_item\" enctype=\"multipart/form-data\">";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<label for=\"item_name\">Item:</label> <label id=\"item_name_label\"></label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_name\" name=\"item_name\" placeholder=\"What is your item?\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_category\">Category:</label>";
+        html_code += "<select class=\"form-control\" id=\"item_category\" name=\"item_category\">";
+        html_code += "<option value=\" \">Choose</option>";
+        html_code += "</select>";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_description\">Description:</label> <label id=\"item_description_label\"></label>";
+        html_code += "<textarea class=\"form-control\" id=\"item_description\" name=\"item_description\" placeholder=\"Explain more about your item.\"></textarea>";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_price\">Price (using numbers and decimal points only):</label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_price\" name=\"item_price\" placeholder=\"3.99\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_inventory\">Inventory (using numbers only):</label>";
+        html_code += "<input type=\"text\" class=\"form-control\" id=\"item_inventory\" name=\"item_inventory\" placeholder=\"40\" />";
+        html_code += "</div>";
+        html_code += "<div class=\"form-group\">";
+        html_code += "<br />";
+        html_code += "<label for=\"item_thumbnail\">Item image:</label>";
+        html_code += "<input type=\"file\" class=\"form-control\" id=\"item_thumbnail\" name=\"item_thumbnail\" />";
+        html_code += "<input type=\"hidden\" class=\"product\" name=\"product\" />";
+        html_code += "<input type=\"hidden\" name=\"change_item\" value=\"Change item\" />";
+        html_code += "</div>";
+        html_code += "<br />";
+        html_code += "<input type=\"submit\" name=\"submit\" class=\"btn btn-success submit_button\" value=\"Change item\"/>";
+        html_code += "</form>";
+        html_code += "<div class=\"change_for_sale_item_feedback\"></div>";
+        html_code += "</div>";
+        html_code += "<br /><a href=\"" + crm_domain + "\"><< Back</a><br /><br />";
+        
+        $(".for_sale_items").html(html_code);
+    }
+    
+    function show_change_for_sale_item_form_data(product) {
+        
+        var html_code = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".for_sale_item_photos").html("");
+                
+                document.getElementById("add_additional_photo").style.display = "none";
+                document.getElementById("change_for_sale_item").style.display = "none";
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".for_sale_item_photos").html("<p>Sorry, the online store is not available.</p>");
+                
+                document.getElementById("add_additional_photo").style.display = "none";
+                document.getElementById("change_for_sale_item").style.display = "none";
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                product_details = JSON.parse(this.responseText);
+                
+                //Control search results from query.
+                if (product_details["sale_product_details"][0]["item"] == "no item"
+                        || product_details["sale_product_details"][0]["item"] == "fail") {
+                    
+                    html_code += item_not_found_message();
+                    
+                    document.getElementById("add_additional_photo").style.display = "none";
+                    document.getElementById("change_for_sale_item").style.display = "none";
+                } else {
+                    
+                    if (product_details["sale_product_details"].length == 1) {
+                        
+                        html_code += "<div style=\"text-align: left; width: 100%; overflow: hidden; max-height: 400px\">";
+                        
+                        if (product_details["sale_product_details"][0]["thumbnail"] != "" && product_details["sale_product_details"][0]["thumbnail"] != null) {
+                            
+                            if (product_details["sale_product_details"][0]["thumbnail"].replace(/\s/g, "").length > 0) {
+                
+                                html_code += "<img class=\"for_sale_image\" src=\"" + product_details["sale_product_details"][0]["thumbnail"] + "\" />";
+                            } else {
+                
+                                html_code += "<img class=\"for_sale_image\" src=\"https://www.timothysdigitalsolutions.com/images/no-file.png\" />";
+                            }
+                        } else {
+            
+                            html_code += "<img class=\"for_sale_image\" src=\"https://www.timothysdigitalsolutions.com/images/no-file.png\" />";
+                        }
+                        
+                        html_code += "</div><br />";
+                        html_code += "<div style=\"text-align: left; width: 100%\">";
+                        
+                        if (product_details["sale_product_additional_pictures"][0]["thumbnail"] != "no picture" && product_details["sale_product_additional_pictures"][0]["thumbnail"] != "fail") {
+                            
+                            //Execute this function twice so that all pictures can be cycled through.
+                            //Executing this function twice will create an array of two sets of pictures.
+                            //Two sets are necessary so that the cycling can occur.
+                            arrange_additional_pictures(product_details);
+                            arrange_additional_pictures(product_details);
+                            
+                            html_code += "<div id=\"additional_pictures\" style=\"text-align: left; width: 100%\"></div>";
+            
+                            if (product_details["sale_product_additional_pictures"].length > 1) {
+                
+                                html_code += "<div style=\"text-align: left; width: 100%\">";
+                                html_code += "<div style=\"text-align: left; width: 100%; display: table\">";
+                                html_code += "<div style=\"text-align: left; width: 100%; display: table-row\">";
+                                html_code += "<div style=\"padding-top: 15px; text-align: center; width: 50%; display: table-cell\">";
+                                html_code += "<label><a onclick=\"scroll_backward()\" href=\"#\"><span>&lt; Previous</span></a></label>";
+                                html_code += "</div>";
+                                html_code += "<div style=\"padding-top: 15px; text-align: center; width: 50%; display: table-cell\">";
+                                html_code += "<label><a onclick=\"scroll_forward()\" href=\"#\"><span>Next &gt;</span></a></label>";
+                                html_code += "</div>";
+                                html_code += "</div>";
+                                html_code += "</div>";
+                                html_code += "</div>";
+                            }
+                        } else {
+            
+                            html_code += "<label>There are no additional photos for this item.</label>";
+                        }
+                        
+                        html_code += "</div><br />";
+                        
+                        document.getElementById("add_additional_photo").style.display = "initial";
+                        document.getElementById("change_for_sale_item").style.display = "initial";
+                        
+                        $("#item_name_label").html(product_details["sale_product_details"][0]["item"]);
+                        $("#item_description_label").html(product_details["sale_product_details"][0]["description"]);
+                        $("#item_price").val(product_details["sale_product_details"][0]["price"]);
+                        $("#item_inventory").val(product_details["sale_product_details"][0]["inventory"]);
+                        $(".product").val(product_details["sale_product_details"][0]["row_id"]);
+                    } else {
+                    
+                        html_code += item_not_found_message();
+                        
+                        document.getElementById("add_additional_photo").style.display = "none";
+                        document.getElementById("change_for_sale_item").style.display = "none";
+                    }
+                }
+                
+                $(".for_sale_item_photos").html(html_code);
+                
+                //Get product pictures.
+                if (product_details["sale_product_details"].length == 1) {
+                    
+                    if (product_details["sale_product_additional_pictures"][0]["thumbnail"] != "no picture" && product_details["sale_product_additional_pictures"][0]["thumbnail"] != "fail") {
+                        
+                        document.getElementById("additional_pictures").innerHTML = additional_pictures();
+                    }
+                }
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-product-details-interface");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("item_id=" + product);
+    }
+    
+    function scroll_backward() {
+        
+        if (additional_picture_position > 0) {
+            
+            additional_picture_position -= 1;
+        } else {
+            
+            additional_picture_position = product_details["sale_product_additional_pictures"].length;
+        }
+        
+        if (product_details["sale_product_details"].length == 1) {
+            
+            if (product_details["sale_product_additional_pictures"][0]["thumbnail"] != "no picture" && product_details["sale_product_additional_pictures"][0]["thumbnail"] != "fail") {
+                
+                document.getElementById("additional_pictures").innerHTML = additional_pictures();
+            }
+        }
+    }
+    
+    function scroll_forward() {
+        
+        if (additional_picture_position < product_details["sale_product_additional_pictures"].length) {
+            
+            additional_picture_position += 1;
+        } else {
+            
+            additional_picture_position = 0;
+        }
+        
+        if (product_details["sale_product_details"].length == 1) {
+            
+            if (product_details["sale_product_additional_pictures"][0]["thumbnail"] != "no picture" && product_details["sale_product_additional_pictures"][0]["thumbnail"] != "fail") {
+                
+                document.getElementById("additional_pictures").innerHTML = additional_pictures();
+            }
+        }
+    }
+    
+    function arrange_additional_pictures(product_details) {
+        
+        //Show the original product picture.
+        if (product_details["sale_product_details"][0]["thumbnail"] != "" && product_details["sale_product_details"][0]["thumbnail"] != null) {
+            
+            if (product_details["sale_product_details"][0]["thumbnail"].replace(/\s/g, "").length > 0) {
+                
+                show_additional_pictures.push(product_details["sale_product_details"][0]["thumbnail"]);
+                additional_picture_id.push("0");
+            } else {
+                
+                show_additional_pictures.push(domain + "/images/no-file.png");
+                additional_picture_id.push("0");
+            }
+        } else {
+            
+            show_additional_pictures.push(domain + "/images/no-file.png");
+            additional_picture_id.push("0");
+        }
+        
+        //Show additional pictures.
+        for (var i = 0; i < product_details["sale_product_additional_pictures"].length; i++) {
+            
+            show_additional_pictures.push(product_details["sale_product_additional_pictures"][i]["thumbnail"]);
+            additional_picture_id.push(product_details["sale_product_additional_pictures"][i]["row_id"]);
+        }
+    }
+    
+    function additional_pictures() {
+        
+        var output = "";
+        
+        output += "<div style=\"text-align: left; width: 100%\">";
+        output += "<div style=\"text-align: left; width: 100%; display: table\">";
+        output += "<div style=\"text-align: left; width: 100%; display: table-row\">";
+        
+        for (var i = 0; i < 2; i++) {
+            
+            output += "<div style=\"text-align: left; width: 50%; vertical-align: top; display: table-cell\">";
+            output += "<div class=\"select_additional_picture\" onclick=\"show_additional_picture('" +
+                    show_additional_pictures[i + additional_picture_position] +
+                    "')\" style=\"overflow: hidden; text-align: center; width: 100%; margin-left: 0%; margin-right: 0%; height: 100px\">";
+            output += "<img style=\"width: 100%\" class=\"for_sale_additional_image_" + (i + additional_picture_position) + "\" src=\"" + show_additional_pictures[i + additional_picture_position] + "\" />";
+            output += "</div><br />";
+            output += "<div class=\"select_additional_picture\" style=\"overflow: hidden; text-align: center; width: 100%; margin-left: 0%; margin-right: 0%; height: 100px\">";
+            
+            if (additional_picture_id[i + additional_picture_position] != "0") {
+                
+                output += "<input type=\"button\" class=\"remove_additional_photo\" onclick=\"delete_additional_photo('" +
+                        additional_picture_id[i + additional_picture_position] +
+                        "')\" value=\"Delete\" />";
+            }
+            
+            output += "</div>";
+            output += "</div>";
+        }
+        
+        if (product_details["sale_product_additional_pictures"].length < 1) {
+            
+            for (var i = 0; i < (1 - product_details["sale_product_additional_pictures"].length); i++) {
+                
+                output += "<div style=\"text-align: left; width: 50%; display: table-cell\">";
+                output += "</div>";
+            }
+        }
+        
+        output += "</div>";
+        output += "</div>";
+        output += "</div>";
+        
+        return output;
+    }
+    
+    function show_additional_picture(picture_src) {
+        
+        $(".for_sale_image").attr("src", picture_src);
+    }
+    
+    //Search item categories for the drop down menu.
+    function search_for_sale_item_categories() {
+        
+        var for_sale_items;
+        var html_select_tag_code = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                for_sale_items = JSON.parse(this.responseText);
+                
+                //Gather possible search categories for user.
+                if (for_sale_items["sale_categories"][0]["category"] != "no category" && for_sale_items["sale_categories"][0]["category"] != "fail") {
+                    
+                    for (var i = 0; i < for_sale_items["sale_categories"].length; i++) {
+                        
+                        html_select_tag_code += "<option value=\"" + for_sale_items["sale_categories"][i]["category"] +
+                                "\">" + for_sale_items["sale_categories"][i]["category"] + "</option>";
+                    }
+                }
+                
+                //Add sales category options from JSON string.
+                $("#item_category").append(html_select_tag_code);
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-for-sale-items-interface");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("");
+    }
+    
+    function html_header_format() {
+        
+        var output = "";
+        
+        output += "<div class=\"header_format\">";
+        output += "<div style=\"text-align: left; width: 100%\">";
+        output += "<select class=\"category\">";
+        output += "<option value=\"All categories\">All categories</option>";
+        output += "</select>";
+        output += "</div>";
+        output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+        output += "<input type=\"text\" class=\"keywords\" style=\"text-align: left; width: 100%\" placeholder=\"Type your search here\" />";
+        output += "</div>";
+        output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+        output += "<select class=\"sort_by\">";
+        output += sort_by();
+        output += "</select>";
+        output += "</div>";
+        output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+        output += "<select class=\"results_per_page\">";
+        output += results_per_page();
+        output += "</select>";
+        output += "</div>";
+        output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+        output += "<input type=\"button\" class=\"find\" onclick=\"search()\" value=\"Search\" />&nbsp;&nbsp;<label><a href=\"" + crm_domain + "?showprompt=add" +
+            "\">New item</a></label>";
+        output += "</div>";
+        output += "</div>";
+        
+        return output;
+    }
+    
+    //Search for sale items.
+    function search_for_sale_items() {
+        
+        var html_code = "";
+        var html_select_tag_code = "";
+        var for_sale_items;
+        var category = "";
+        var keywords = "";
+        var perpage = "";
+        var page = "";
+        var sort = "";
+        var search = "";
+        
+        category = $.url_params("category");
+        keywords = $.url_params("keywords");
+        perpage = $.url_params("perpage");
+        page = $.url_params("page");
+        sort = $.url_params("sort");
+        search = $.url_params("search");
+        
+        html_code += html_header_format();
+        
+        var xhttp = new XMLHttpRequest();
+    
+        xhttp.onreadystatechange = function() {
+        
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".for_sale_items").html("");
+            }
+        
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+            
+                $(".for_sale_items").html("<p>Sorry, the online store is not available.</p>");
+            }
+        
+            if (this.readyState == 4 && this.status == 200) {
+            
+                for_sale_items = JSON.parse(this.responseText);
+            
+                //Gather possible search categories for user.
+                if (for_sale_items["sale_categories"][0]["category"] != "no category" && for_sale_items["sale_categories"][0]["category"] != "fail") {
+                
+                    for (var i = 0; i < for_sale_items["sale_categories"].length; i++) {
+                    
+                        html_select_tag_code += "<option value=\"" + for_sale_items["sale_categories"][i]["category"] +
+                                "\">" + for_sale_items["sale_categories"][i]["category"] + "</option>";
+                    }
+                }
+            
+                //Control search results from query.
+                if (for_sale_items["sale_items"][0]["item"] == "no item" || for_sale_items["sale_items"][0]["item"] == "fail") {
+                
+                    if (search != "Search") {
+                    
+                        category = "";
+                        keywords = "";
+                    
+                        html_code += "<p>Sorry, the store is currently closed.</p>";
+                    } else {
+                    
+                        if (keywords != "" && keywords != null) {
+                        
+                            if (keywords.replace(/\s/g, "").length > 0) {
+                            
+                                html_code += "<p>Sorry, but no product by the keywords of \"" + keywords + "\" was found.  Try a broader search.</p>";
+                            } else {
+                            
+                                category = "";
+                                keywords = "";
+                            }
+                        } else if (category != "" && category != null) {
+                        
+                            if (category.replace(/\s/g, "").length > 0) {
+                            
+                                html_code += "<p>Sorry, but no product by the category of \"" + category + "\" was found.  Try a broader search.</p>";
+                            } else {
+                            
+                                category = "";
+                                keywords = "";
+                            }
+                        } else {
+                        
+                            category = "";
+                            keywords = "";
+                        
+                            html_code += "<p>Sorry, no products were found.  Try searching by category, keywords, or both.</p>";
+                        }
+                    }
+                } else {
+                    
+                    html_code += html_body_format(for_sale_items);
+                    html_code += html_footer_all_formats(for_sale_items);
+                }
+            
+                $(".for_sale_items").html(html_code);
+            
+                //Add sales category options from JSON string.
+                $(".category").append(html_select_tag_code);
+            }
+        };
+    
+        xhttp.open("POST", third_party_domain + "/admin-for-sale-items-interface");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("category=" + category + "&keywords=" + keywords + "&results_per_page=" + perpage + "&page_number=" + page + "&sort_by=" + sort + "&search_items=" + search);
+    }
+    
+    function html_body_format(for_sale_items) {
+        
+        var output = "";
+        
+        output += "<div class=\"body_format\">";
+        output += "<div style=\"text-align: left; width: 100%\">";
+        output += "<div class=\"delete_item_for_sale_feedback\"></div>";
+        
+        for (var i = 0; i < for_sale_items["sale_items"].length; i++) {
+            
+            output += "<div style=\"text-align: left; width: 100%; margin-top: 15px; height: 300px;\"><a href=\"" + crm_domain + "?showprompt=change" +
+            "&product=" + for_sale_items["sale_items"][i]["row_id"] + "\">";
+            
+            if (for_sale_items["sale_items"][i]["thumbnail"] != "" && for_sale_items["sale_items"][i]["thumbnail"] != null) {
+                
+                if (for_sale_items["sale_items"][i]["thumbnail"].replace(/\s/g, "").length > 0) {
+                    
+                    output += "<img class=\"for_sale_image\" src=\"" + for_sale_items["sale_items"][i]["thumbnail"] + "\" />";
+                } else {
+                    
+                    output += "<img class=\"for_sale_image\" src=\"" + domain + "/images/no-file.png\" />";
+                }
+            } else {
+                
+                output += "<img class=\"for_sale_image\" src=\"" + domain + "/images/no-file.png\" />";
+            }
+            
+            output += "</a></div>";
+            output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+            output += "<label><b>" + for_sale_items["sale_items"][i]["item"] + "</b></label>";
+            output += "</div>";
+            output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+            output += "<label><span style=\"font-size: 16pt\"><b>$" + for_sale_items["sale_items"][i]["price"] + "</b></span></label>";
+            output += "</div>";
+            output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+            output += "<label>Items available (" + for_sale_items["sale_items"][i]["inventory"] + ")</label>";
+            output += "</div>";
+            output += "<div style=\"text-align: left; width: 100%; padding-top: 15px\">";
+            output += "<input type=\"button\" class=\"remove_for_sale_item\" onclick=\"delete_for_sale_item('" +
+                    for_sale_items["sale_items"][i]["row_id"] + "')\" value=\"Delete\" />&nbsp;&nbsp;<label><a href=\"" + crm_domain + "?showprompt=change" +
+            "&product=" + for_sale_items["sale_items"][i]["row_id"] + "\">Edit item</a></label>";
+            output += "</div>";
+            output += "<div style=\"text-align: left; width: 100%; padding-top: 15px; margin-bottom: 15px\">";
+            output += "</div>";
+        }
+        
+        output += "</div>";
+        output += "</div>";
+        
+        return output;
+    }
+    
+    //Control the page number display.
+    function html_footer_all_formats(for_sale_items) {
+        
+        var output = "";
+        var page = "";
+        var page_num = 1;
+        var last_several_pages = 0;
+        var two_pages_before = 0;
+        var two_pages_after = 0;
+        var redirect = "";
+        
+        page = $.url_params("page");
+        
+        page_num = parseInt(page, 10);
+        
+        if (isNaN(page_num)) {
+            
+            page_num = 1;
+            
+            redirect = document.location.href;
+            
+            if (page != null) {
+                
+                if (page.replace(/\s/g, "").length == 0) {
+                    
+                    redirect = redirect.replace(/%20/g, "");
+                    redirect = redirect.replace("&page=%20", "&page=1");
+                    redirect = redirect.replace("page=%20", "page=1");
+                }
+                
+                redirect = redirect.replace("&page=", "&page=1");
+                redirect = redirect.replace("page=", "page=1");
+            } else {
+                
+                redirect = redirect.replace("&search=Search", "&page=1&search=Search");
+                redirect = redirect.replace("&search=Search", "page=1&search=Search");
+            }
+            
+            //If there is no query string in URL, give it a default one.
+            if (window.location.href == crm_domain) {
+                
+                window.location = crm_domain + "?sort=Low%20to%20high&perpage=10&page=1&search=Search";
+            } else {
+                
+                window.location = redirect;
+            }
+        }
+        
+        if (!(page_num < 1) && !(page_num > for_sale_items["pages"].length)) {
+            
+            output += "<span style=\"text-align: center\"><p>";
+            
+            if (page_num != 1) {
+                
+                output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                "&page=" + (page_num - 1)) + "\"><< Previous</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+            }
+            
+            if (for_sale_items["pages"][0]["page_number"] != page_num) {
+                
+                output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                "&page=" + for_sale_items["pages"][0]["page_number"]) + "\">";
+                output += for_sale_items["pages"][0]["page_number"];
+                output += "</a>";
+            } else {
+                
+                output += "<span style=\"text-decoration: underline\">";
+                output += for_sale_items["pages"][0]["page_number"];
+                output += "</span>";
+            }
+            
+            if (for_sale_items["pages"].length <= 5) {
+                
+                //Format spaces for other page numbers.
+                for (var i = 1; i < for_sale_items["pages"].length; i++) {
+                    
+                    output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                    
+                    if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                        
+                        output += "<span style=\"text-decoration: underline\">";
+                    } else {
+                        
+                        output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                        "&page=" + for_sale_items["pages"][i]["page_number"]) + "\">";
+                    }
+                    
+                    output += for_sale_items["pages"][i]["page_number"];
+                    
+                    if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                        
+                        output += "</span>";
+                    } else {
+                        
+                        output += "</a>";
+                    }
+                }
+            } else {
+                
+                //Reformat page numbers if page quantity is greater than 5.
+                //If page between 1 and 5 is browsed show the first five pages, plus the last page.
+                if (page_num <= 5) {
+                    
+                    //Format spaces for other page numbers.
+                    //Show page numbers 2 through 5.
+                    for (var i = 1; i <= 5; i++) {
+                        
+                        output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                        
+                        if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                            
+                            output += "<span style=\"text-decoration: underline\">";
+                        } else {
+                            
+                            output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                            "&page=" + for_sale_items["pages"][i]["page_number"]) + "\">";
+                        }
+                        
+                        output += for_sale_items["pages"][i]["page_number"];
+                        
+                        if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                            
+                            output += "</span>";
+                        } else {
+                            
+                            output += "</a>";
+                        }
+                    }
+                    
+                    //Show last page number.4
+                    output += "&nbsp;&nbsp;...&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                    "&page=" + for_sale_items["pages"][for_sale_items["pages"].length - 1]["page_number"]) + "\">" +
+                            for_sale_items["pages"][for_sale_items["pages"].length - 1]["page_number"] + "</a>";
+                } else {
+                    
+                    //If page browsed page number is within the last five pages, show the last five pages.
+                    if (page_num > (for_sale_items["pages"].length - 5)) {
+                        
+                        last_several_pages = for_sale_items["pages"].length - 5;
+                        
+                        for (var i = last_several_pages; i < for_sale_items["pages"].length; i++) {
+                            
+                            //Last several pages should follow right after the ellipses.
+                            if (i == last_several_pages) {
+                                
+                                output += "&nbsp;&nbsp;...&nbsp;&nbsp;";
+                                
+                                //Focused page
+                                if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                                    
+                                    output += "<span style=\"text-decoration: underline\">";
+                                } else {
+                                    
+                                    output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                                    "&page=" + for_sale_items["pages"][i]["page_number"]) + "\">";
+                                }
+                                
+                                output += for_sale_items["pages"][i]["page_number"];
+                                
+                                //Focused page
+                                if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                                    
+                                    output += "</span>";
+                                } else {
+                                    
+                                    output += "</a>";
+                                }
+                            } else {
+                                
+                                output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                                
+                                //Focused page
+                                if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                                    
+                                    output += "<span style=\"text-decoration: underline\">";
+                                } else {
+                                    
+                                    output += "<a href=\"" + document.location.href.replace("&page=" + page_num,
+                                    "&page=" + for_sale_items["pages"][i]["page_number"]) + "\">";
+                                }
+                                
+                                output += for_sale_items["pages"][i]["page_number"];
+                                
+                                //Focused page
+                                if (for_sale_items["pages"][i]["page_number"] == page_num) {
+                                    
+                                    output += "</span>";
+                                } else {
+                                    
+                                    output += "</a>";
+                                }
+                            }
+                        }
+                    } else {
+                        
+                        two_pages_before = page_num - 2;
+                        two_pages_after = page_num + 2;
+                        
+                        for (var i = two_pages_before; i < page_num; i++) {
+                            
+                            //Show two page numbers before focused page.
+                            if (i == two_pages_before) {
+                                
+                                output += "&nbsp;&nbsp;...&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                                "&page=" + for_sale_items["pages"][i - 1]["page_number"]) + "\">" + for_sale_items["pages"][i - 1]["page_number"] + "</a>";
+                            } else {
+                                
+                                output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                                "&page=" + for_sale_items["pages"][i - 1]["page_number"]) + "\">" + for_sale_items["pages"][i - 1]["page_number"] + "</a>";
+                            }
+                        }
+                        
+                        output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"text-decoration: underline\">" + page_num + "</span>";
+                        
+                        for (var i = page_num; i < two_pages_after; i++) {
+                            
+                            //Show two page numbers after focused page.
+                            output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                            "&page=" + for_sale_items["pages"][i]["page_number"]) + "\">" + for_sale_items["pages"][i]["page_number"] + "</a>";
+                        }
+                        
+                        output += "&nbsp;&nbsp;...&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                        "&page=" + for_sale_items["pages"].length) + "\">" + for_sale_items["pages"].length + "</a>";
+                    }
+                }
+            }
+            
+            if (page_num != for_sale_items["pages"].length) {
+                
+                output += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"" + document.location.href.replace("&page=" + page_num,
+                "&page=" + (page_num + 1)) + "\">Next >></a>";
+            }
+            
+            output += "</p></span>";
+        }
+        
+        return output;
+    }
+    
+    //Accept form input.
+    function search() {
+        
+        var navigation_url = "";
+        
+        var form_category = "";
+        var form_keywords = "";
+        var form_sort_by = "";
+        var form_results_per_page = "";
+        
+        form_category = $(".category").val();
+        form_keywords = $(".keywords").val();
+        form_sort_by = $(".sort_by").val();
+        form_results_per_page = $(".results_per_page").val();
+        
+        navigation_url += crm_domain + "?";
+        navigation_url += "sort=" + form_sort_by;
+        navigation_url += "&perpage=" + form_results_per_page;
+        navigation_url += "&page=1";
+        
+        if (form_category != "All categories") {
+            
+            navigation_url += "&category=" + form_category
+        }
+        
+        if (form_keywords != "" && form_keywords != null) {
+            
+            if (form_keywords.replace(/\s/g, "").length > 0) {
+                
+                navigation_url += "&keywords=" + form_keywords;
+            }
+        }
+        
+        navigation_url += "&search=Search";
+        
+        window.location = navigation_url;
+    }
+    
+    $(document).ready(function(e) {
+        
+        //The administrator can review all items for sale, be prompted to edit/delete an item,
+        //or add a new item.
+        var show_prompt = "";
+        var product = "";
+        
+        show_prompt = $.url_params("showprompt");
+        product = $.url_params("product");
+        
+        if (show_prompt == "add") {
+            
+            show_add_for_sale_item_form();
+            search_for_sale_item_categories();
+        } else if (show_prompt == "change") {
+            
+            show_change_for_sale_item_form();
+            show_change_for_sale_item_form_data(product);
+            search_for_sale_item_categories();
+        } else {
+            
+            search_for_sale_items();
+        }
+        
+        //Submit form data via Ajax
+        $("#add_for_sale_item").on('submit', function(e) {
+            
+            e.preventDefault();
+            
+            $.ajax({
+                
+                type: 'POST',
+                url: domain + '/third-party/items-for-sale/admin-manage-for-sale-items/',
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData:false,
+                beforeSend: function() {
+                    
+                    $('.submit_button').attr("disabled","disabled");
+                    $('#add_for_sale_item').css("opacity",".5");
+                },
+                success: function(response) {
+                    
+                    $('.add_for_sale_item_feedback').html('');
+                    
+                    if (response.status == 1) {
+                        
+                        add_for_sale_item();
+                    } else {
+                        
+                        $('.add_for_sale_item_feedback').html('<p class="alert alert-danger">' + response.message + '</p>');
+                    }
+                    
+                    $('#add_for_sale_item').css("opacity", "");
+                    $(".submit_button").removeAttr("disabled");
+                }
+            });
+        });
+        
+        //Submit form data via Ajax
+        $("#change_for_sale_item").on('submit', function(e) {
+            
+            e.preventDefault();
+            
+            $.ajax({
+                
+                type: 'POST',
+                url: domain + '/third-party/items-for-sale/admin-manage-for-sale-items/',
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData:false,
+                beforeSend: function() {
+                    
+                    $('.submit_button').attr("disabled","disabled");
+                    $('#change_for_sale_item').css("opacity",".5");
+                },
+                success: function(response) {
+                    
+                    $('.change_for_sale_item_feedback').html('');
+                    
+                    if (response.status == 1) {
+                        
+                        change_for_sale_item();
+                    } else {
+                        
+                        $('.change_for_sale_item_feedback').html('<p class="alert alert-danger">' + response.message + '</p>');
+                    }
+                    
+                    $('#change_for_sale_item').css("opacity", "");
+                    $(".submit_button").removeAttr("disabled");
+                }
+            });
+        });
+        
+        //Submit form data via Ajax
+        $("#add_additional_photo").on('submit', function(e) {
+            
+            e.preventDefault();
+            
+            $.ajax({
+                
+                type: 'POST',
+                url: domain + '/third-party/items-for-sale/admin-manage-for-sale-items/',
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData:false,
+                beforeSend: function() {
+                    
+                    $('.submit_button').attr("disabled","disabled");
+                    $('#add_additional_photo').css("opacity",".5");
+                },
+                success: function(response) {
+                    
+                    $('.add_additional_photo_feedback').html('');
+                    
+                    if (response.status == 1) {
+                        
+                        add_additional_photo();
+                    } else {
+                        
+                        $('.add_additional_photo_feedback').html('<p class="alert alert-danger">' + response.message + '</p>');
+                    }
+                    
+                    $('#add_additional_photo').css("opacity", "");
+                    $(".submit_button").removeAttr("disabled");
+                }
+            });
+        });
+    });
+    
+    function add_for_sale_item() {
+        
+        var add_for_sale_item_message = "";
+        var item = "";
+        var thumbnail = "";
+        var category = "";
+        var description = "";
+        var price = "";
+        var inventory = "";
+        
+        item = $("#item_name").val();
+        thumbnail = domain + "/third-party/" +
+                "items-for-sale/admin-manage-for-sale-items/photos/" +
+                document.getElementById("item_thumbnail").files[0].name;
+        category = $("#item_category").val();
+        description = $("#item_description").val();
+        price = $("#item_price").val();
+        inventory = $("#item_inventory").val();
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".add_for_sale_item_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".add_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                add_for_sale_item_message = this.responseText;
+                
+                if (add_for_sale_item_message.includes("success")) {
+                    
+                    $("#add_for_sale_item")[0].reset();
+                    
+                    after_adding_for_sale_item();
+                } else {
+                    
+                    $(".add_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-add-item-for-sale");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("item=" + item + "&thumbnail=" + thumbnail + "&category=" + category +
+                "&description=" + description + "&price=" + price + "&inventory=" + inventory +
+                "&add_item_for_sale=Add item");
+    }
+    
+    function change_for_sale_item() {
+        
+        var change_for_sale_item_message = "";
+        var item = "";
+        var thumbnail = "";
+        var category = "";
+        var description = "";
+        var price = "";
+        var inventory = "";
+        var product = "";
+        
+        item = $("#item_name").val();
+        thumbnail = domain + "/third-party/" +
+                "items-for-sale/admin-manage-for-sale-items/photos/" +
+                document.getElementById("item_thumbnail").files[0].name;
+        category = $("#item_category").val();
+        description = $("#item_description").val();
+        price = $("#item_price").val();
+        inventory = $("#item_inventory").val();
+        product = $(".product").val();
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".change_for_sale_item_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".change_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                change_for_sale_item_message = this.responseText;
+                
+                if (change_for_sale_item_message.includes("success")) {
+                    
+                    $("#change_for_sale_item")[0].reset();
+                    
+                    after_changing_for_sale_item();
+                } else {
+                    
+                    $(".change_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-change-item-for-sale");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("item=" + item + "&thumbnail=" + thumbnail + "&category=" + category +
+                "&description=" + description + "&price=" + price + "&inventory=" + inventory +
+                "&row_id=" + product + "&change_item_for_sale=Change item");
+    }
+    
+    function delete_for_sale_item(image_id) {
+        
+        var delete_item_for_sale_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".delete_item_for_sale_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".delete_item_for_sale_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                delete_item_for_sale_message = this.responseText;
+                
+                if (delete_item_for_sale_message.includes("success")) {
+                    
+                    after_deleting_item_for_sale();
+                } else {
+                    
+                    $(".delete_item_for_sale_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-delete-item-for-sale");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("row_id=" + image_id + "&delete_item_for_sale=Delete item");
+    }
+    
+    function add_additional_photo() {
+        
+        var add_additional_photo_message = "";
+        var thumbnail = "";
+        var product = "";
+        
+        thumbnail = domain + "/third-party/" +
+                "items-for-sale/admin-manage-for-sale-items/photos/" +
+                document.getElementById("item_additional_thumbnail").files[0].name;
+        product = $(".product").val();
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".add_additional_photo_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".add_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                add_additional_photo_message = this.responseText;
+                
+                if (add_additional_photo_message.includes("success")) {
+                    
+                    $("#add_additional_photo")[0].reset();
+                    
+                    after_adding_additional_photo();
+                } else {
+                    
+                    $(".add_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-add-sale-item-pictures");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("thumbnail=" + thumbnail + "&item_id=" + product + "&add_sale_item_pictures=Add picture");
+    }
+    
+    function delete_additional_photo(image_id) {
+        
+        var delete_additional_photo_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".delete_additional_photo_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".delete_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                delete_additional_photo_message = this.responseText;
+                
+                if (delete_additional_photo_message.includes("success")) {
+                    
+                    after_deleting_additional_photo();
+                } else {
+                    
+                    $(".delete_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", third_party_domain + "/admin-delete-sale-item-pictures");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("row_id=" + image_id + "&delete_sale_item_pictures=Delete picture");
+    }
+    
+    //Erase unnecessary photos.
+    function after_adding_for_sale_item() {
+ 
+        var manage_image_file_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".add_for_sale_item_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".add_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                manage_image_file_message = this.responseText;
+                
+                if (manage_image_file_message.includes("files erased")) {
+                    
+                    window.location = document.location.href.replace("#", "");
+                } else {
+                    
+                    $(".add_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", domain + "/third-party/items-for-sale/admin-manage-for-sale-items/erase-files/");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("erase_unused_files=Erase");
+    }
+    
+    //Erase unnecessary photos.
+    function after_changing_for_sale_item() {
+ 
+        var manage_image_file_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".change_for_sale_item_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".change_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                manage_image_file_message = this.responseText;
+                
+                if (manage_image_file_message.includes("files erased")) {
+                    
+                    window.location = document.location.href.replace("#", "");
+                } else {
+                    
+                    $(".change_for_sale_item_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", domain + "/third-party/items-for-sale/admin-manage-for-sale-items/erase-files/");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("erase_unused_files=Erase");
+    }
+    
+    //Erase unnecessary photos.
+    function after_deleting_item_for_sale() {
+ 
+        var manage_image_file_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".delete_item_for_sale_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".delete_item_for_sale_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                manage_image_file_message = this.responseText;
+                
+                if (manage_image_file_message.includes("files erased")) {
+                    
+                    window.location = document.location.href.replace("#", "");
+                } else {
+                    
+                    $(".delete_item_for_sale_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", domain + "/third-party/items-for-sale/admin-manage-for-sale-items/erase-files/");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("erase_unused_files=Erase");
+    }
+    
+    //Erase unnecessary photos.
+    function after_adding_additional_photo() {
+ 
+        var manage_image_file_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".add_additional_photo_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".add_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                manage_image_file_message = this.responseText;
+                
+                if (manage_image_file_message.includes("files erased")) {
+                    
+                    window.location = document.location.href.replace("#", "");
+                } else {
+                    
+                    $(".add_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", domain + "/third-party/items-for-sale/admin-manage-for-sale-items/erase-files/");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("erase_unused_files=Erase");
+    }
+    
+    //Erase unnecessary photos.
+    function after_deleting_additional_photo() {
+ 
+        var manage_image_file_message = "";
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+            
+            if (this.readyState == 0 || this.readyState == 1 || this.readyState == 2 || this.readyState == 3) {
+            
+                $(".delete_additional_photo_feedback").html("");
+            }
+            
+            if (this.readyState == 4 && (this.status == 0 || this.status == 500)) {
+                
+                $(".delete_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                        "and try again.</p>");
+            }
+            
+            if (this.readyState == 4 && this.status == 200) {
+                
+                manage_image_file_message = this.responseText;
+                
+                if (manage_image_file_message.includes("files erased")) {
+                    
+                    window.location = document.location.href.replace("#", "");
+                } else {
+                    
+                    $(".delete_additional_photo_feedback").html("<p>There was a problem submitting the form.  Refresh the page, " +
+                            "and try again.</p>");
+                }             
+            }
+        };
+        
+        xhttp.open("POST", domain + "/third-party/items-for-sale/admin-manage-for-sale-items/erase-files/");
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("erase_unused_files=Erase");
+    }
+</script>
+</apex:page>
