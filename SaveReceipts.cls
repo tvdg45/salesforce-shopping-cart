@@ -149,7 +149,7 @@ global class SaveReceipts implements Schedulable {
                         	ShoppingCartReceipt__c = useShoppingCartReceipt.get('Receipt ' + String.valueOf(itemSoldFields.get('receipt_id')))
                         	);
 
-							soldItemsToInsert.add(newShoppingCartItemSold);                            
+				soldItemsToInsert.add(newShoppingCartItemSold);                            
                         }
                     }
                     
