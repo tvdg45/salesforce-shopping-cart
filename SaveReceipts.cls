@@ -4,21 +4,6 @@ global class SaveReceipts implements Schedulable {
     private static Integer receiptCount = 0;
     private static Map<String, Object> readJSONString;
     
-    private static void searchReceiptCount() {
-        
-        try {
-            
-            for (ShoppingCartReceipt__c eachReceipt: [SELECT Id FROM ShoppingCartReceipt__c
-                                                                  ORDER BY CreatedDate DESC]) {
-                
-                receiptCount++;
-            }
-        } catch(DMLException e) {
-            
-            receiptCount = 0;
-        }
-    }
-    
     //This method initializes a connection to the REST API.
     @future(callout=true)
     public static void saveReceipts() {
@@ -36,6 +21,19 @@ global class SaveReceipts implements Schedulable {
         
         replace[0] = '\'';
         replace[1] = '"';
+        
+        //Get number of receipts, so that next receipt numbers can be generated.
+        try {
+            
+            for (ShoppingCartReceipt__c eachReceipt: [SELECT Id FROM ShoppingCartReceipt__c
+                                                                  ORDER BY CreatedDate DESC]) {
+                
+                receiptCount++;
+            }
+        } catch(DMLException e) {
+            
+            receiptCount = 0;
+        }
         
         //Search sales categories.
         try {
@@ -146,10 +144,10 @@ global class SaveReceipts implements Schedulable {
                         	Category__c = useShoppingCartSalesCategory.get(String.valueOf(itemSoldFields.get('category'))),
                         	Description__c = String.valueOf(itemSoldFields.get('description')).replace(find[0], replace[0]).replace(find[1], replace[1]),
                         	TotalPrice__c = Decimal.valueOf(String.valueOf(itemSoldFields.get('total_price'))),
-                        	ShoppingCartReceipt__c = useShoppingCartReceipt.get('Receipt ' + String.valueOf(itemSoldFields.get('receipt_id')))
+                        	ShoppingCartReceipt__c = useShoppingCartReceipt.get('Receipt ' + String.valueOf(Integer.valueOf(itemSoldFields.get('receipt_id')) + receiptCount))
                         	);
 
-				soldItemsToInsert.add(newShoppingCartItemSold);                            
+							soldItemsToInsert.add(newShoppingCartItemSold);                            
                         }
                     }
                     
@@ -157,6 +155,9 @@ global class SaveReceipts implements Schedulable {
                         
                         insert soldItemsToInsert;
                     }
+                    
+                    //Delete receipts that have no related items sold.
+                    deleteJunkReceipts();
                 } catch (DMLException e) {
                     
                     System.debug(e.getMessage());
@@ -168,14 +169,33 @@ global class SaveReceipts implements Schedulable {
         }
     }
     
-    public static void manageReceipts() {
+    //Delete receipts without associated items sold.
+    public static void deleteJunkReceipts() {
         
-        searchReceiptCount();
-        saveReceipts();
+        List<ShoppingCartReceipt__c> receiptsToDelete = new List<ShoppingCartReceipt__c>();
+        
+        try {
+            
+            for (ShoppingCartReceipt__c eachReceipt: [SELECT TotalPrice__c FROM ShoppingCartReceipt__c
+                                                                  ORDER BY CreatedDate DESC]) {
+                if (eachReceipt.TotalPrice__c < 0.01) {
+                    
+                    receiptsToDelete.add(eachReceipt);
+                }
+            }
+            
+            if (receiptsToDelete.size() > 0) {
+                
+                delete receiptsToDelete;
+            }
+        } catch(DMLException e) {
+            
+            System.debug(e.getMessage());
+        }
     }
     
     global static void execute(SchedulableContext runSchedule) {
         
-        manageReceipts();
+        saveReceipts();
     }
 }
