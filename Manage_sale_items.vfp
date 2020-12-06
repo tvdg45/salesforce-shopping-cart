@@ -677,6 +677,13 @@
     function html_footer_all_formats(for_sale_items) {
         
         var output = "";
+		var tour = "";
+		var isdtp = "";
+		var sfdcIFrameOrigin = "";
+		var nonce = "";
+		var clc = "";
+		var sfdcIFrameHost = "";
+		var ltn_app_id = "";
         var page = "";
         var page_num = 1;
         var last_several_pages = 0;
@@ -684,6 +691,14 @@
         var two_pages_after = 0;
         var redirect = "";
         
+		//tour = $.url_params("tour");
+		isdtp = $.url_params("isdtp");
+		sfdcIFrameOrigin = $.url_params("sfdcIFrameOrigin");
+		nonce = $.url_params("nonce");
+		clc = $.url_params("clc");
+		sfdcIFrameHost = $.url_params("sfdcIFrameHost");
+		ltn_app_id = $.url_params("ltn_app_id");
+		
         page = $.url_params("page");
         
         page_num = parseInt(page, 10);
@@ -715,7 +730,10 @@
             if (window.location.href == crm_domain) {
                 
                 window.location = crm_domain + "?sort=Low%20to%20high&perpage=10&page=1&search=Search";
-            } else {
+            } else if (window.location.href == (crm_domain + "?tour=" + tour + "&isdtp=" + isdtp + "&sfdcIFrameOrigin=" + sfdcIFrameOrigin + "&nonce=" + nonce + "&clc=" + clc + "&sfdcIFrameHost=" + sfdcIFrameHost + "&ltn_app_id=" + ltn_app_id)) {
+			
+				window.location = crm_domain + "?tour=" + tour + "&isdtp=" + isdtp + "&sfdcIFrameOrigin=" + sfdcIFrameOrigin + "&nonce=" + nonce + "&clc=" + clc + "&sfdcIFrameHost=" + sfdcIFrameHost + "&ltn_app_id=" + ltn_app_id + "&sort=Low%20to%20high&perpage=10&page=1&search=Search";
+			} else {
                 
                 window.location = redirect;
             }
